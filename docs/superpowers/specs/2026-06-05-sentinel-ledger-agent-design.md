@@ -9,9 +9,9 @@
 
 ## 1. One-liner
 
-**Sentinel** is an AI agent that can move your ETH on command — but it holds no private key and **cannot sign anything** until a human physically approves the transaction on a Ledger device. The signing happens on Ledger's Speculos emulator, so no hardware is required to build, demo, or qualify.
+**Sentinel** is a policy-guarded AI agent for moving ETH. It turns plain-English intents into transactions, screens every one against a **software policy** (spending cap + recipient allowlist), and then requires **hardware approval** on a Ledger before anything is signed. It holds no private key. Signing happens on Ledger's Speculos emulator, so no hardware is required to build, demo, or qualify.
 
-This is Ledger's exact thesis made concrete: *agents gave us autonomous action; hardware gives us deterministic, human-enforced control.*
+This is Ledger's exact thesis made concrete — and it implements the line from their own pitch: *the missing layer in every agentic stack is **deterministic, hardware-enforced guardrails**.* Sentinel ships two layers: a software policy gate (convenience) and a hardware approval gate (security).
 
 ## 2. Why this qualifies (bounty mapping)
 
@@ -35,15 +35,17 @@ Four small, independently-testable pieces:
 1. **Emulated device (Speculos)** — runs the Ethereum app on an emulated Ledger, exposing its API at `http://localhost:5000` (web screen + APDU server). This is the only non-TypeScript dependency.
 2. **Signer layer (TypeScript)** — `@ledgerhq/device-management-kit` + `@ledgerhq/device-transport-kit-speculos` + `@ledgerhq/device-signer-kit-ethereum`. Builds the DMK pointed at Speculos, opens a session, derives the address, signs.
 3. **Agent layer (TypeScript)** — parses natural-language input ("send 0.01 ETH to 0x…") into a structured intent `{ to, amountEth }` using **Groq's free API**. The agent's invariant: it can *build* and *broadcast* but **physically cannot sign** — that capability lives only behind the device.
-4. **Chain layer (TypeScript)** — `viem` fetches nonce/gas/fees from a public **Sepolia** RPC, assembles the EIP-1559 transaction, and broadcasts the signed result, printing the tx hash + `sepolia.etherscan.io` link.
+4. **Policy layer (TypeScript)** — a `policy.json` defining `maxAmountEth` and an `allowlist` of recipient addresses. The agent screens every intent against it *before* touching the device; a violation is refused locally with a clear reason. This is the deterministic software guardrail that complements the hardware one.
+5. **Chain layer (TypeScript)** — `viem` fetches nonce/gas/fees from a public **Sepolia** RPC, assembles the EIP-1559 transaction, and broadcasts the signed result, printing the tx hash + `sepolia.etherscan.io` link.
 
 ### Module boundaries
 
 - `speculos/` — scripts/notes to launch the emulator with the ETH app (no app code; it's the dependency).
 - `src/signer.ts` — DMK setup, session, `getAddress()`, `signTransaction()`. Depends only on DMK packages + a Speculos URL.
 - `src/agent.ts` — `parseIntent(text) -> { to, amountEth }`. Depends only on Groq.
+- `src/policy.ts` — `checkPolicy(intent) -> { ok, reason }` against `policy.json`. Pure function, trivially unit-testable.
 - `src/chain.ts` — `buildTx(intent) -> unsignedTx`, `broadcast(rawTx) -> hash`. Depends only on viem + an RPC URL.
-- `src/index.ts` — wires them: read prompt → parse → build → sign (HITL) → broadcast → print link.
+- `src/index.ts` — wires them: read prompt → parse → **policy check** → build → sign (HITL) → broadcast → print link.
 
 Each module can be tested in isolation: the signer against Speculos, the agent against sample strings, the chain layer against Sepolia.
 
@@ -52,9 +54,10 @@ Each module can be tested in isolation: the signer against Speculos, the agent a
 ```
 "send 0.01 ETH to 0x123…"
    → agent.parseIntent (Groq)          → { to, amountEth }
+   → policy.checkPolicy                 → cap + allowlist   ← SOFTWARE GUARDRAIL (refuse locally if violated)
    → chain.buildTx                     → unsigned EIP-1559 tx (nonce/gas/fees from Sepolia)
    → signer.signTransaction            → DMK asks Speculos to sign
-   → Speculos shows clear-signing screen   ← THE KILL SWITCH (human approves on emulated device)
+   → Speculos shows clear-signing screen   ← HARDWARE GUARDRAIL (human approves on emulated device)
    → signature returned                → chain assembles raw tx
    → chain.broadcast                   → tx hash + sepolia.etherscan.io link
 ```
@@ -71,7 +74,7 @@ The demo's defining moment: the agent **halts, waiting on the device**. Nothing 
 
 - **M0 — Spike (de-risk):** Speculos + ETH app running; DMK Speculos transport reads an address. Green-light gate.
 - **M1 — Sign one hardcoded tx** end-to-end on Sepolia (no agent). Proves signer + chain layers.
-- **M2 — Add the agent layer** (Groq NL → intent). Now it is "an AI agent."
+- **M2 — Add the agent + policy layers** (Groq NL → intent, screened against `policy.json`). Now it is a policy-guarded AI agent.
 - **M3 — Polish + record:** clean terminal output; screen-record terminal + Speculos screen = proof-of-use.
 - **M4 — Ship deliverables:** repo + portfolio-grade README; X and/or LinkedIn post tagging `@Ledger` with `#LedgerSponsor`; submit the Google Form.
 
