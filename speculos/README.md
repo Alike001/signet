@@ -100,11 +100,18 @@ and pick a "Build and run functional tests" run that still has a non-expired `ra
 
 ### 2. Run Speculos with the app (Docker)
 
+**Run with our OWN seed (`--seed`), not the default.** Speculos' built-in seed is public,
+so its Sepolia address is permanently drained by an EIP-7702 sweeper — any testnet ETH you
+send vanishes instantly. We pass a throwaway testnet-only mnemonic (kept in `.env` as
+`SPECULOS_SEED`, gitignored) so the device derives a fresh, un-swept address.
+
 ```bash
 docker pull ghcr.io/ledgerhq/speculos:latest
 docker run --rm -it -v $PWD/speculos/apps:/apps -p 5000:5000 \
   ghcr.io/ledgerhq/speculos:latest \
-  --model nanosp --display headless --api-port 5000 /apps/ethereum.elf
+  --model nanosp --display headless --api-port 5000 \
+  --seed "<your throwaway 12-word mnemonic — see SPECULOS_SEED in .env>" \
+  /apps/ethereum.elf
 ```
 
 - API + web screen: **http://localhost:5000** (the DMK Speculos transport talks HTTP to this URL).
