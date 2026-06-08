@@ -1,5 +1,5 @@
 {
-  "name": "sentinel",
+  "name": "signet",
   "version": "1.0.0",
   "description": "Policy-guarded AI agent that signs Ethereum transactions only after human approval on a Ledger device (DMK + Speculos).",
   "scripts": {

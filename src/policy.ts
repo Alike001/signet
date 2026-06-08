@@ -1,5 +1,5 @@
 /**
- * Policy layer — the SOFTWARE guardrail (first of Sentinel's two checks).
+ * Policy layer — the SOFTWARE guardrail (first of Signet's two checks).
  *
  * Pure, deterministic, fully unit-tested. Runs BEFORE the device ever sees a tx:
  * an intent that fails here is refused locally and never reaches the Ledger.

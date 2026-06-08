@@ -1,4 +1,6 @@
-# Sentinel
+# Signet
+
+*A Ledger-guarded AI agent.*
 
 **An AI agent that proposes Ethereum transactions but cannot move a single wei without a human approving on a Ledger device.**
 
@@ -16,25 +18,25 @@ AI agents that transact today hold a raw private key — in an environment varia
 
 ## The solution
 
-Sentinel turns plain English into a Sepolia transaction, then forces every signature through two independent guardrails: a **software policy** (spending cap + recipient allowlist) that runs first, and a **hardware approval** on a Ledger device that runs last. The agent holds no private key — the key never leaves the device. An intent that breaks policy is refused locally and the device is never touched; an intent that passes still cannot move funds until a human approves it on the device screen.
+Signet turns plain English into a Sepolia transaction, then forces every signature through two independent guardrails: a **software policy** (spending cap + recipient allowlist) that runs first, and a **hardware approval** on a Ledger device that runs last. The agent holds no private key — the key never leaves the device. An intent that breaks policy is refused locally and the device is never touched; an intent that passes still cannot move funds until a human approves it on the device screen.
 
 ## What the demo shows
 
 No setup needed to follow along — the video runs three plain-English commands, one after another:
 
 1. **A valid payment goes through — but only after a human approves.** *"send 0.001 ETH to 0x…dEaD"* — the agent reads the request and the policy approves it, then it stops and waits. Nothing moves until a person presses approve on the Ledger screen. After approval, the payment sends and a public Etherscan receipt appears.
-2. **A payment to the wrong recipient is blocked.** The same small amount, but to an address that isn't on the approved list — Sentinel refuses it on its own, instantly, and the Ledger is never even asked.
+2. **A payment to the wrong recipient is blocked.** The same small amount, but to an address that isn't on the approved list — Signet refuses it on its own, instantly, and the Ledger is never even asked.
 3. **A payment that is too large is blocked.** The right recipient, but more than the set limit — again refused before the device is ever involved.
 
-Together they show the single idea behind Sentinel: the agent can *suggest* a payment, but it can never *spend* on its own.
+Together they show the single idea behind Signet: the agent can *suggest* a payment, but it can never *spend* on its own.
 
 ## Quick start
 
 > Just want to see it work? The demo video above shows the whole flow end to end — running it yourself is optional and only needed to reproduce it. It requires [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
-git clone https://github.com/Alike001/sentinel.git
-cd sentinel
+git clone https://github.com/Alike001/signet.git
+cd signet
 npm install
 ```
 
@@ -54,7 +56,7 @@ Start the emulated Ledger (Speculos running the Ethereum app — see [`speculos/
 npm start -- "send 0.001 ETH to 0x000000000000000000000000000000000000dEaD"
 ```
 
-You review and approve on the device screen at [localhost:5000](http://localhost:5000); on approval, Sentinel prints the Etherscan link. No physical Ledger required — Speculos is a valid emulator of the real device, and the same code targets hardware by swapping the transport.
+You review and approve on the device screen at [localhost:5000](http://localhost:5000); on approval, Signet prints the Etherscan link. No physical Ledger required — Speculos is a valid emulator of the real device, and the same code targets hardware by swapping the transport.
 
 ## Stack
 
@@ -99,7 +101,7 @@ Five small modules: `agent.ts` (NL → intent), `policy.ts` (the software guard,
 
 ## Bounty alignment — Ledger
 
-- **Device Management Kit is the core, not a bolt-on.** Sentinel uses DMK, the Ethereum signer kit, and the Speculos transport to make every signature require on-device human approval — exactly the agent-plus-hardware-accountability layer the bounty asks for.
+- **Device Management Kit is the core, not a bolt-on.** Signet uses DMK, the Ethereum signer kit, and the Speculos transport to make every signature require on-device human approval — exactly the agent-plus-hardware-accountability layer the bounty asks for.
 - **Proof of use without hardware.** The full flow runs against the Speculos emulator and broadcasts real Sepolia transactions, so the demo is reproducible by any judge with Docker — no physical Ledger needed.
 - **Two guardrails, not one.** The software policy and the hardware approval are independent: bypassing the agent's logic still hits the device, and breaking policy never reaches it.
 
