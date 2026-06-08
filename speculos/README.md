@@ -11,10 +11,15 @@ extensionless directory imports that Node's native ESM loader cannot resolve
 (`ERR_UNSUPPORTED_DIR_IMPORT` / "does not provide an export named …"). Their **CJS**
 builds work perfectly under Node.
 
-Fix (already applied): the project is CommonJS — no `"type": "module"` in `package.json`,
-and `tsconfig.json` uses `"module": "CommonJS"`, `"moduleResolution": "node"`. We still
-write normal `import { … } from …` syntax; tsx/esbuild transpiles it to `require`, so Node
-picks each package's working `require` build. Keep it this way for every `src/*.ts` file.
+Fix (already applied): the project is CommonJS — the lever is **no `"type": "module"` in
+`package.json`**. We still write normal `import { … } from …` syntax; tsx/esbuild transpiles
+it to `require`, so Node picks each package's working `require` build. Keep it this way for
+every `src/*.ts` file.
+
+`tsconfig.json` uses `"module": "preserve"` + `"moduleResolution": "bundler"` — this only
+affects `tsc` typechecking (the `@ledgerhq/*` packages map their types through the `exports`
+field, which legacy `node` resolution can't follow). It does **not** change the runtime:
+tsx/esbuild resolves modules itself and the absent `"type"` keeps it CommonJS.
 
 ## Spike result (Task 0.4 — green-light gate ✅)
 
