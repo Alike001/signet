@@ -8,6 +8,7 @@
  * The unsigned bytes are handed to the Ledger signer; the r/s/v it returns are
  * reattached here to make a broadcastable transaction. The agent never holds a key.
  */
+import "./net-ipv4";
 import "dotenv/config";
 import {
   createPublicClient,

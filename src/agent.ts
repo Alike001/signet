@@ -6,6 +6,7 @@
  * API. Whatever the model returns, we validate hard here — a bad address or amount throws
  * before it can ever reach the policy check or the device.
  */
+import "./net-ipv4";
 import "dotenv/config";
 import type { Intent } from "./policy";
 
